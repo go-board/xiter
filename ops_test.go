@@ -1,4 +1,4 @@
-package xiter
+THIS SHOULD BE A LINTER ERRORpackage xiter
 
 import (
 	"cmp"
@@ -423,4 +423,35 @@ func TestIsSorted(t *testing.T) {
 	// 测试未排序序列
 	seq = fromSlice([]int{1, 3, 2, 4})
 	assert.False(t, IsSorted(seq))
+}
+
+func TestZip(t *testing.T) {
+    a := fromSlice([]int{1, 2, 3})
+    b := fromSlice([]string{"a", "b"})
+    z := Zip(a, b)
+    got := ToSlice2(z)
+    assert.Equal(t, []Pair[int, string]{{1, "a"}, {2, "b"}}, got)
+
+    // 与空序列拉链
+    empty := Empty[int]()
+    got2 := ToSlice2(Zip(empty, fromSlice([]string{"x"})))
+    assert.Empty(t, got2)
+}
+
+func TestZipWith(t *testing.T) {
+    a := fromSlice([]int{1, 2, 3})
+    b := fromSlice([]int{10, 20})
+    z := ZipWith(a, b, func(x, y int) int { return x + y })
+    got := ToSlice(z)
+    assert.Equal(t, []int{11, 22}, got)
+}
+
+func TestZipWith2(t *testing.T) {
+    a := FromSlice2([]Pair[int, string]{{1, "a"}, {2, "b"}})
+    b := FromSlice2([]Pair[int, int]{{10, 3}})
+    z := ZipWith2(a, b, func(k1 int, v1 string, k2 int, v2 int) (string, string) {
+        return strconv.Itoa(k1+k2), v1+":"+strconv.Itoa(v2)
+    })
+    got := ToSlice2(z)
+    assert.Equal(t, []Pair[string, string]{{"11", "a:3"}}, got)
 }
