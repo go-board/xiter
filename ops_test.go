@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERRORpackage xiter
+package xiter
 
 import (
 	"cmp"
