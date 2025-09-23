@@ -834,3 +834,64 @@ func IsSortedFunc[E any](s iter.Seq[E], f func(E, E) int) bool {
 func IsSorted[E cmp.Ordered](s iter.Seq[E]) bool {
 	return IsSortedFunc(s, cmp.Compare[E])
 }
+
+// Zip 将两个元素序列配对为一个键值对序列，迭代至任一序列耗尽为止。
+func Zip[E1, E2 any](a iter.Seq[E1], b iter.Seq[E2]) iter.Seq2[E1, E2] {
+    return func(yield func(E1, E2) bool) {
+        ia, stopA := iter.Pull(a)
+        defer stopA()
+        ib, stopB := iter.Pull(b)
+        defer stopB()
+        for {
+            va, oka := ia()
+            vb, okb := ib()
+            if !oka || !okb {
+                return
+            }
+            if !yield(va, vb) {
+                return
+            }
+        }
+    }
+}
+
+// ZipWith 使用给定函数将两个序列逐项合并为一个新序列，迭代至任一序列耗尽为止。
+func ZipWith[E1, E2, R any](a iter.Seq[E1], b iter.Seq[E2], f func(E1, E2) R) iter.Seq[R] {
+    return func(yield func(R) bool) {
+        ia, stopA := iter.Pull(a)
+        defer stopA()
+        ib, stopB := iter.Pull(b)
+        defer stopB()
+        for {
+            va, oka := ia()
+            vb, okb := ib()
+            if !oka || !okb {
+                return
+            }
+            if !yield(f(va, vb)) {
+                return
+            }
+        }
+    }
+}
+
+// ZipWith2 使用给定函数将两个键值对序列逐项合并为一个新的键值对序列，迭代至任一序列耗尽为止。
+func ZipWith2[K1, V1, K2, V2, K3, V3 any](a iter.Seq2[K1, V1], b iter.Seq2[K2, V2], f func(K1, V1, K2, V2) (K3, V3)) iter.Seq2[K3, V3] {
+    return func(yield func(K3, V3) bool) {
+        ia, stopA := iter.Pull2(a)
+        defer stopA()
+        ib, stopB := iter.Pull2(b)
+        defer stopB()
+        for {
+            ka, va, oka := ia()
+            kb, vb, okb := ib()
+            if !oka || !okb {
+                return
+            }
+            k3, v3 := f(ka, va, kb, vb)
+            if !yield(k3, v3) {
+                return
+            }
+        }
+    }
+}
