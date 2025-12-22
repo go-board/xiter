@@ -4,14 +4,6 @@ import (
 	"iter"
 )
 
-type integral interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
-type numbric interface {
-	integral | ~float32 | ~float64
-}
-
 // Range1 generates an integer sequence from 0 to end-1 (end not included).
 func Range1[N integral](end N) iter.Seq[N] {
 	return func(yield func(N) bool) {
@@ -37,10 +29,31 @@ func Range2[N integral](start, end N) iter.Seq[N] {
 // Range3 generates an integer sequence from start to end-1 with a step size
 // (end not included).
 func Range3[N integral](start, end, step N) iter.Seq[N] {
+	// 如果步长为0，返回空序列
+	if step == 0 {
+		return Empty[N]()
+	}
+	// 如果步长为正，但start >= end，返回空序列
+	if step > 0 && start >= end {
+		return Empty[N]()
+	}
+	// 如果步长为负，但start <= end，返回空序列
+	if step < 0 && start <= end {
+		return Empty[N]()
+	}
+
 	return func(yield func(N) bool) {
-		for i := start; i < end; i += step {
-			if !yield(i) {
-				return
+		if step > 0 {
+			for i := start; i < end; i += step {
+				if !yield(i) {
+					return
+				}
+			}
+		} else {
+			for i := start; i > end; i += step {
+				if !yield(i) {
+					return
+				}
 			}
 		}
 	}
@@ -71,41 +84,6 @@ func FromFunc2[K, V any](f func() (K, V, bool)) iter.Seq2[K, V] {
 			if !ok {
 				return
 			}
-			if !yield(k, v) {
-				return
-			}
-		}
-	}
-}
-
-// FromSlice generates a key/value sequence from a slice, using the slice index
-// as the key and the element as the value.
-func FromSlice[E any, S ~[]E](s S) iter.Seq2[int, E] {
-	return func(yield func(int, E) bool) {
-		for i, e := range s {
-			if !yield(i, e) {
-				return
-			}
-		}
-	}
-}
-
-// FromSlice2 generates a key/value sequence from a slice of Pair values, using
-// each Pair's Key and Value as the sequence elements.
-func FromSlice2[K, V any, S ~[]Pair[K, V]](s S) iter.Seq2[K, V] {
-	return func(yield func(K, V) bool) {
-		for _, p := range s {
-			if !yield(p.Key, p.Value) {
-				return
-			}
-		}
-	}
-}
-
-// FromMap converts a map into a key/value sequence by iterating all pairs.
-func FromMap[K comparable, V any, M ~map[K]V](m M) iter.Seq2[K, V] {
-	return func(yield func(K, V) bool) {
-		for k, v := range m {
 			if !yield(k, v) {
 				return
 			}
