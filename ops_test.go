@@ -1093,3 +1093,101 @@ func TestFilterMap2(t *testing.T) {
 		t.Errorf("FilterMap2 failed. Expected 2 elements, Got: %d", len(actualKeys))
 	}
 }
+
+// TestAny tests the Any function
+func TestAny(t *testing.T) {
+	// 测试包含符合条件的元素
+	numbers := Range1(10) // 0-9
+	result := Any(numbers, func(x int) bool { return x%2 == 0 })
+	if !result {
+		t.Errorf("Any should return true for even numbers in 0-9")
+	}
+
+	// 测试不包含符合条件的元素
+	numbers = Range1(10)
+	result = Any(numbers, func(x int) bool { return x > 10 })
+	if result {
+		t.Errorf("Any should return false for numbers > 10 in 0-9")
+	}
+
+	// 测试空序列
+	empty := Empty[int]()
+	result = Any(empty, func(x int) bool { return true })
+	if result {
+		t.Errorf("Any should return false for empty sequence")
+	}
+}
+
+// TestAny2 tests the Any2 function
+func TestAny2(t *testing.T) {
+	// 测试包含符合条件的键值对
+	values := []int{10, 20, 30, 40, 50}
+	pairs := FromSlice(values)
+	result := Any2(pairs, func(k int, v int) bool { return v == 30 })
+	if !result {
+		t.Errorf("Any2 should return true for value 30")
+	}
+
+	// 测试不包含符合条件的键值对
+	pairs = FromSlice(values)
+	result = Any2(pairs, func(k int, v int) bool { return v > 100 })
+	if result {
+		t.Errorf("Any2 should return false for value > 100")
+	}
+
+	// 测试空序列
+	empty := Empty2[int, int]()
+	result = Any2(empty, func(k, v int) bool { return true })
+	if result {
+		t.Errorf("Any2 should return false for empty sequence")
+	}
+}
+
+// TestAll tests the All function
+func TestAll(t *testing.T) {
+	// 测试所有元素都符合条件
+	numbers := Range2(1, 10) // 1-9
+	result := All(numbers, func(x int) bool { return x > 0 })
+	if !result {
+		t.Errorf("All should return true for all numbers > 0 in 1-9")
+	}
+
+	// 测试不是所有元素都符合条件
+	numbers = Range2(1, 10)
+	result = All(numbers, func(x int) bool { return x < 5 })
+	if result {
+		t.Errorf("All should return false for numbers < 5 in 1-9")
+	}
+
+	// 测试空序列
+	empty := Empty[int]()
+	result = All(empty, func(x int) bool { return true })
+	if !result {
+		t.Errorf("All should return true for empty sequence")
+	}
+}
+
+// TestAll2 tests the All2 function
+func TestAll2(t *testing.T) {
+	// 测试所有键值对都符合条件
+	values := []int{10, 20, 30, 40, 50}
+	pairs := FromSlice(values)
+	result := All2(pairs, func(k int, v int) bool { return v >= 10 })
+	if !result {
+		t.Errorf("All2 should return true for all values >= 10")
+	}
+
+	// 测试不是所有键值对都符合条件
+	pairs = FromSlice(values)
+	result = All2(pairs, func(k int, v int) bool { return v < 30 })
+	if result {
+		t.Errorf("All2 should return false for all values < 30")
+	}
+
+	// 测试空序列
+	empty := Empty2[int, int]()
+	result = All2(empty, func(k, v int) bool { return true })
+	if !result {
+		t.Errorf("All2 should return true for empty sequence")
+	}
+}
