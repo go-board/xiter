@@ -1,21 +1,42 @@
-# xiter - Extended Iterators for Go
+# xiter
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Reference](https://pkg.go.dev/badge/github.com/go-board/xiter.svg)](https://pkg.go.dev/github.com/go-board/xiter)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/go-board/xiter)](https://github.com/go-board/xiter/blob/main/go.mod)
 [![Build Status](https://github.com/go-board/xiter/actions/workflows/go.yml/badge.svg)](https://github.com/go-board/xiter/actions/workflows/go.yml)
 
-xiter is a powerful extension library for Go's standard `iter` package, providing a rich set of functional-style operations for working with sequences and key-value pairs in Go 1.22+.
+`xiter` is an extension toolkit for Go's standard `iter` package. It provides functional, lazy, and type-safe sequence operations for both `iter.Seq[E]` and `iter.Seq2[K, V]`.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+  - [Functional API (`xiter`)](#functional-api-xiter)
+  - [Fluent API (`stream` subpackage)](#fluent-api-stream-subpackage)
+- [Core Concepts](#core-concepts)
+- [API Overview](#api-overview)
+  - [Source](#source)
+  - [Transform](#transform)
+  - [Filter / Slice](#filter--slice)
+  - [Terminal](#terminal)
+  - [Compare / Search](#compare--search)
+- [Best Practices](#best-practices)
+- [Development & Testing](#development--testing)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+---
 
 ## Features
 
-- **Comprehensive API**: Over 40 functional operations for sequence manipulation
-- **Type-safe**: Full support for Go's generics throughout the API
-- **Dual sequence support**: Works with both single-element sequences (`iter.Seq`) and key-value pairs (`iter.Seq2`)
-- **Lazy evaluation**: All operations are lazily evaluated for optimal performance
-- **Side-effect free**: Most operations return new iterators without modifying the original data
-- **Seamless integration**: Drop-in compatibility with Go's standard `iter` package
-- **Performance optimized**: Minimal overhead and efficient implementations
+- ✅ Supports both `iter.Seq[E]` and `iter.Seq2[K, V]`
+- ✅ Fully generic and type-safe
+- ✅ Lazy evaluation with on-demand consumption
+- ✅ Covers common workflows: map, filter, slice, reduce, search, compare, sorted checks
+- ✅ Provides both functional APIs (`xiter`) and fluent APIs (`xiter/stream`)
 
 ## Installation
 
@@ -25,340 +46,128 @@ go get github.com/go-board/xiter
 
 ## Quick Start
 
+### Functional API (`xiter`)
+
 ```go
 package main
 
 import (
 	"fmt"
-	"iter"
+
 	"github.com/go-board/xiter"
 )
 
 func main() {
-	// Generate a sequence of numbers from 0 to 9
-	numbers := xiter.Range1(10)
+	numbers := xiter.Range1(10) // 0..9
+	evens := xiter.Filter(numbers, func(v int) bool { return v%2 == 0 })
+	doubled := xiter.Map(evens, func(v int) int { return v * 2 })
 
-	// Double each number
-	doubled := xiter.Map(numbers, func(x int) int { return x * 2 })
+	sum := xiter.Fold(doubled, 0, func(acc, v int) int { return acc + v })
+	fmt.Println(sum) // 40
+}
+```
 
-	// Filter even numbers (which are all even after doubling)
-	evenDoubles := xiter.Filter(doubled, func(x int) bool { return x%2 == 0 })
+### Fluent API (`stream` subpackage)
 
-	// Sum the results
-	sum := xiter.Fold(evenDoubles, 0, func(acc, x int) int { return acc + x })
+> `stream` provides a fluent wrapper (`Stream` / `Stream2`) for common workflows.
+> It intentionally exposes a subset of `xiter` APIs rather than a 1:1 surface.
 
-	fmt.Printf("Sum of doubled numbers: %d\n", sum) // Output: 90
+```go
+package main
 
-	// Working with key-value pairs
-	pairs := xiter.FromFunc2(func() (string, int, bool) {
-		// This would typically come from some data source
-		staticPairs := []struct{ K string; V int }{"one": 1, "two": 2, "three": 3}
-		index := 0
-		return func() (string, int, bool) {
-			if index >= len(staticPairs) {
-				return "", 0, false
-			}
-			pair := staticPairs[index]
-			index++
-			return pair.K, pair.V, true
-		}
-	}())
+import (
+	"fmt"
 
-	// Multiply values by 10
-	enhanced := xiter.Map2(pairs, func(k string, v int) (string, int) {
-		return k, v * 10
-	})
+	"github.com/go-board/xiter"
+	"github.com/go-board/xiter/stream"
+)
 
-	// Print all pairs
-	xiter.ForEach2(enhanced, func(k string, v int) {
-		fmt.Printf("%s: %d\n", k, v) // Outputs: one: 10, two: 20, three: 30
-	})
+func main() {
+	s := stream.Of(xiter.Range1(10)).
+		Skip(2).
+		Take(5).
+		Filter(func(v int) bool { return v%2 == 0 }).
+		Map(func(v int) int { return v * 10 })
+
+	result := make([]int, 0)
+	s.ForEach(func(v int) { result = append(result, v) })
+
+	fmt.Println(result) // [20 40 60]
 }
 ```
 
 ## Core Concepts
 
-xiter provides operations for two main sequence types:
-
-- **`iter.Seq[E]`**: A sequence of elements of type `E`
-- **`iter.Seq2[K, V]`**: A sequence of key-value pairs of types `K` and `V`
-
-All operations are designed to be chained together, creating a pipeline of transformations that are only executed when the sequence is consumed.
+- `iter.Seq[E]`: sequence of single values
+- `iter.Seq2[K, V]`: sequence of key/value pairs
+- Sequences are **lazy**: execution happens at terminal stages like `ForEach`, `Fold`, `First`, and `Last`
+- Sequences are usually **single-pass**: avoid re-consuming the same exhausted source
 
 ## API Overview
 
-### Sequence Generation
+> See full signatures on GoDoc: <https://pkg.go.dev/github.com/go-board/xiter>
 
-```go
-// Create a sequence from 0 to 9
-numbers := xiter.Range1(10)
+### Source
 
-// Create a sequence from 5 to 14
-numbers := xiter.Range2(5, 15)
+- `Range1`, `Range2`, `Range3`
+- `FromFunc`, `FromFunc2`
+- `Once`, `Once2`
+- `Empty`, `Empty2`
+- `Repeat`, `Repeat2`
 
-// Create a sequence from 1 to 10 with step 2
-odds := xiter.Range3(1, 11, 2)
+### Transform
 
-// Create a sequence from a function
-count := 0
-seq := xiter.FromFunc(func() (int, bool) {
-    count++
-    return count, count <= 5
-})
+- `Map`, `Map2`
+- `MapWhile`, `MapWhile2`
+- `FlatMap`, `Flatten`
+- `Enumerate`
+- `Join`, `Split`
+- `Cast`
 
-// Create a sequence with a single element
-one := xiter.Once(42)
+### Filter / Slice
 
-// Create an empty sequence
-empty := xiter.Empty[int]()
+- `Filter`, `Filter2`
+- `FilterMap`, `FilterMap2`
+- `Take`, `Take2`, `TakeWhile`, `TakeWhile2`
+- `Skip`, `Skip2`, `SkipWhile`, `SkipWhile2`
+- `Chain`, `Chain2`
 
-// Create an infinite sequence repeating a value
-repeats := xiter.Repeat("hello")
-```
+### Terminal
 
-### Mapping
+- `ForEach`, `ForEach2`
+- `Fold`, `Fold2`
+- `Size`, `Size2`, `SizeFunc`, `SizeFunc2`, `SizeValue`, `SizeValue2`
 
-```go
-// Transform each element
-numbers := xiter.Range1(5)
-squares := xiter.Map(numbers, func(x int) int { return x * x })
+### Compare / Search
 
-// Transform while condition is true
-doubles := xiter.MapWhile(numbers, func(x int) (int, bool) {
-    result := x * 2
-    return result, result < 10
-})
-
-// Transform key-value pairs
-pairs := xiter.FromFunc2(func() (string, int, bool) {
-    // ...
-})
-transformed := xiter.Map2(pairs, func(k string, v int) (string, int) {
-    return "key_" + k, v * 10
-})
-```
-
-### Filtering
-
-```go
-// Filter elements that satisfy a condition
-numbers := xiter.Range1(10)
-evens := xiter.Filter(numbers, func(x int) bool { return x%2 == 0 })
-
-// Filter and map in a single step
-strings := []string{"one", "two", "three"}
-seq := xiter.FromFunc(func() (string, bool) {
-    // ... (yield strings from slice)
-})
-longStrings := xiter.FilterMap(seq, func(s string) (string, bool) {
-    if len(s) > 3 {
-        return s, true
-    }
-    return "", false
-})
-```
-
-### Reduction
-
-```go
-// Apply a function to each element (for side effects)
-numbers := xiter.Range1(5)
-xiter.ForEach(numbers, func(x int) {
-    fmt.Println(x)
-})
-
-// Reduce a sequence to a single value
-numbers := xiter.Range1(10)
-sum := xiter.Fold(numbers, 0, func(acc, x int) int { return acc + x })
-```
-
-### Searching and Checking
-
-```go
-// Check if a sequence contains an element
-numbers := xiter.Range1(10)
-hasFive := xiter.Contains(numbers, 5)
-
-// Check if any element satisfies a condition
-hasEven := xiter.Any(numbers, func(x int) bool { return x%2 == 0 })
-
-// Check if all elements satisfy a condition
-allPositive := xiter.All(numbers, func(x int) bool { return x > 0 })
-
-// Find the first element that satisfies a condition
-firstEven, found := xiter.FirstFunc(numbers, func(x int) bool { return x%2 == 0 })
-
-// Find the last element
-last, found := xiter.Last(numbers)
-```
-
-### Sequence Operations
-
-```go
-// Concatenate two sequences
-seq1 := xiter.Range1(3)
-seq2 := xiter.Range2(5, 8)
-combined := xiter.Chain(seq1, seq2)
-
-// Take the first 5 elements
-firstFive := xiter.Take(numbers, 5)
-
-// Skip the first 3 elements
-rest := xiter.Skip(numbers, 3)
-
-// Take elements while condition is true
-untilFive := xiter.TakeWhile(numbers, func(x int) bool { return x < 5 })
-```
-
-## Key-Value Pair Operations
-
-xiter provides equivalent operations for key-value pair sequences (`iter.Seq2[K, V]`):
-
-```go
-// Create key-value pairs
-pairs := xiter.FromFunc2(func() (string, int, bool) {
-    // ...
-})
-
-// Transform pairs
-enhanced := xiter.Map2(pairs, func(k string, v int) (string, int) {
-    return "enhanced_" + k, v * 2
-})
-
-// Filter pairs
-validPairs := xiter.Filter2(enhanced, func(k string, v int) bool {
-    return v > 5
-})
-
-// Reduce pairs
-sum := xiter.Fold2(validPairs, 0, func(acc int, k string, v int) int {
-    return acc + v
-})
-```
+- `Contains`, `Contains2`, `ContainsFunc`, `ContainsFunc2`
+- `Any`, `Any2`, `All`, `All2`
+- `First`, `First2`, `FirstFunc`, `FirstFunc2`
+- `Last`, `Last2`, `LastFunc`, `LastFunc2`
+- `Position`, `Position2`
+- `Compare`, `Compare2`, `CompareFunc`, `CompareFunc2`
+- `Equal`, `Equal2`, `EqualFunc`, `EqualFunc2`
+- `Max`, `MaxFunc`, `Min`, `MinFunc`
+- `IsSorted`, `IsSortedFunc`
 
 ## Best Practices
 
-1. **Chain operations for readability**: Combine multiple operations in a single pipeline
-2. **Consume sequences efficiently**: Iterators can only be consumed once
-3. **Use lazy evaluation**: Take advantage of xiter's lazy evaluation for large datasets
-4. **Avoid unnecessary materialization**: Prefer to work with iterators directly rather than converting to slices
-5. **Leverage type inference**: Let Go's type inference work for you when possible
+1. Compose transformations as pipelines for readability.
+2. Delay materialization (e.g. slice/map conversion) whenever possible.
+3. Always pair infinite sources (like `Repeat`) with limiting operators (`Take`, etc.).
+4. Use `*_Func` variants for custom comparison and matching logic.
 
-## Performance Considerations
+## Development & Testing
 
-- All xiter operations are designed to be lightweight and efficient
-- Lazy evaluation means only elements that are actually consumed are processed
-- Memory usage is minimized since sequences are not fully materialized unless explicitly requested
-- For maximum performance, avoid unnecessary conversions between sequences and concrete types
-
-## Examples
-
-### Calculating Factorial
-
-```go
-func Factorial(n int) int {
-    numbers := xiter.Range2(1, n+1)
-    return xiter.Fold(numbers, 1, func(acc, x int) int { return acc * x })
-}
+```bash
+go test ./...
 ```
 
-### Processing Data from a Database
+## Roadmap
 
-```go
-func ProcessUsers(db *sql.DB) error {
-    rows, err := db.Query("SELECT id, name, email FROM users")
-    if err != nil {
-        return err
-    }
-    defer rows.Close()
-
-    // Create a sequence from database rows
-    userSeq := xiter.FromFunc2(func() (int, string, bool) {
-        if !rows.Next() {
-            return 0, "", false
-        }
-        var id int
-        var name string
-        if err := rows.Scan(&id, &name, nil); err != nil {
-            return 0, "", false
-        }
-        return id, name, true
-    })
-
-    // Filter active users (assuming some condition)
-    activeUsers := xiter.Filter2(userSeq, func(id int, name string) bool {
-        // Implement your active user logic
-        return id%2 == 0 // Example condition
-    })
-
-    // Process each active user
-    xiter.ForEach2(activeUsers, func(id int, name string) {
-        fmt.Printf("Processing user: %s (ID: %d)\n", name, id)
-    })
-
-    return nil
-}
-```
-
-### Working with Large Datasets
-
-```go
-func ProcessLargeFile(filename string) error {
-    file, err := os.Open(filename)
-    if err != nil {
-        return err
-    }
-    defer file.Close()
-
-    scanner := bufio.NewScanner(file)
-
-    // Create a sequence from file lines
-    lines := xiter.FromFunc(func() (string, bool) {
-        if !scanner.Scan() {
-            return "", false
-        }
-        return scanner.Text(), true
-    })
-
-    // Filter and process lines
-    longLines := xiter.Filter(lines, func(line string) bool { return len(line) > 100 })
-    count := xiter.Fold(longLines, 0, func(acc int, line string) int {
-        return acc + 1
-    })
-
-    fmt.Printf("Found %d lines longer than 100 characters\n", count)
-    return nil
-}
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues, pull requests, or feature suggestions.
-
-### Development Setup
-
-1. Fork the repository
-2. Clone your fork
-3. Create a feature branch
-4. Make your changes
-5. Run tests: `go test ./...`
-6. Submit a pull request
+- Add more examples and benchmarks
+- Continue improving `stream` API coverage and documentation
 
 ## License
 
-xiter is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Inspired by functional programming languages like Haskell, Scala, and JavaScript
-- Built on Go's excellent new iterators feature
-- Thanks to the Go community for their feedback and contributions
-
-## Support
-
-If you encounter any issues or have questions, please file an issue on the [GitHub repository](https://github.com/go-board/xiter/issues).
-
-## Related Projects
-
-- [Go Standard `iter` Package](https://pkg.go.dev/iter)
-- [Go Generics](https://go.dev/doc/tutorial/generics)
+Apache-2.0. See [LICENSE](LICENSE) for details.

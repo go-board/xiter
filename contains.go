@@ -27,6 +27,8 @@ func ContainsFunc[E any](s iter.Seq[E], f func(E) bool) bool {
 	return false
 }
 
+// ContainsFunc2 reports whether the key/value sequence contains a pair that satisfies
+// the predicate.
 func ContainsFunc2[K, V any](s iter.Seq2[K, V], f func(K, V) bool) bool {
 	for k, v := range s {
 		if f(k, v) {
