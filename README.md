@@ -4,6 +4,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/go-board/xiter.svg)](https://pkg.go.dev/github.com/go-board/xiter)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/go-board/xiter)](https://github.com/go-board/xiter/blob/main/go.mod)
 [![Build Status](https://github.com/go-board/xiter/actions/workflows/go.yml/badge.svg)](https://github.com/go-board/xiter/actions/workflows/go.yml)
+[![Coverage](https://codecov.io/github/go-board/xiter/branch/master/graph/badge.svg)](https://codecov.io/github/go-board/xiter)
 
 `xiter` is an extension toolkit for Go's standard `iter` package. It provides functional, lazy, and type-safe sequence operations for both `iter.Seq[E]` and `iter.Seq2[K, V]`.
 
