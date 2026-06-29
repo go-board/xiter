@@ -110,6 +110,13 @@ func (s Seq2[K, V]) SkipWhile(f func(K, V) bool) Seq2[K, V] {
 	return Of2(xiter.SkipWhile2(s.Iter(), f))
 }
 
+// StepBy returns a Seq2 that yields every n-th pair starting from the first
+// (index 0). When n <= 0 the result is empty.
+//
+//	Of2(xiter.Enumerate(xiter.Range1(10))).StepBy(3)
+//	// yields (0,0), (3,3), (6,6), (9,9)
+func (s Seq2[K, V]) StepBy(n int) Seq2[K, V] { return Of2(xiter.StepBy2(s.Iter(), n)) }
+
 // Chain concatenates s and other into a single Seq2: all pairs of s first,
 // then all pairs of other. Either side may be empty or infinite.
 func (s Seq2[K, V]) Chain(other Seq2[K, V]) Seq2[K, V] {
@@ -188,6 +195,13 @@ func (s Seq2[K, V]) LastFunc(f func(K, V) bool) (K, V, bool) {
 func (s Seq2[K, V]) Position(f func(K, V) bool) (int, bool) {
 	return xiter.Position2(s.Iter(), f)
 }
+
+// Nth is a terminal operation that returns the n-th pair (zero-based index).
+// Returns (zero, zero, false) when n is negative or when the sequence has
+// fewer than n+1 pairs. Only the first n+1 pairs are consumed.
+//
+//	Of2(xiter.Enumerate(xiter.Range1(10))).Nth(3)  // (3, 3, true)
+func (s Seq2[K, V]) Nth(n int) (K, V, bool) { return xiter.Nth2(s.Iter(), n) }
 
 // CompareFunc is a terminal operation that lexicographically compares s and
 // other pair by pair using f, following cmp.Compare's negative/zero/positive

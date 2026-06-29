@@ -562,6 +562,36 @@ func TestSkipWhile(t *testing.T) {
 	}
 }
 
+func TestStepBy(t *testing.T) {
+	cases := []struct {
+		name string
+		src  iter.Seq[int]
+		n    int
+		want []int
+	}{
+		{"normal", Range1(10), 3, []int{0, 3, 6, 9}},
+		{"step_one", Range1(4), 1, []int{0, 1, 2, 3}},
+		{"step_equals_len", Range1(4), 4, []int{0}},
+		{"step_greater_than_len", Range1(4), 10, []int{0}},
+		{"zero_step", Range1(5), 0, nil},
+		{"negative_step", Range1(5), -1, nil},
+		{"empty", Empty[int](), 2, nil},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := ToSlice(StepBy(c.src, c.n))
+			if len(got) != len(c.want) {
+				t.Fatalf("got %v, want %v", got, c.want)
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Fatalf("got %v, want %v", got, c.want)
+				}
+			}
+		})
+	}
+}
+
 func TestEnumerate(t *testing.T) {
 	values := []string{"a", "b", "c", "d", "e"}
 	s := func(yield func(string) bool) {
@@ -1254,6 +1284,71 @@ func TestPosition(t *testing.T) {
 	}
 }
 
+func TestNth(t *testing.T) {
+	cases := []struct {
+		name string
+		src  iter.Seq[int]
+		n    int
+		want int
+		ok   bool
+	}{
+		{"normal", Range1(10), 3, 3, true},
+		{"first", Range1(10), 0, 0, true},
+		{"last", Range1(5), 4, 4, true},
+		{"out_of_range", Range1(2), 5, 0, false},
+		{"negative", Range1(5), -1, 0, false},
+		{"empty", Empty[int](), 0, 0, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			v, ok := Nth(c.src, c.n)
+			if ok != c.ok || (ok && v != c.want) {
+				t.Fatalf("got (%d, %v), want (%d, %v)", v, ok, c.want, c.ok)
+			}
+		})
+	}
+}
+
+func TestFindMap(t *testing.T) {
+	parse := func(s string) (int, bool) {
+		var n int
+		var neg bool
+		i := 0
+		if i < len(s) && s[i] == '-' {
+			neg = true
+			i++
+		}
+		if i >= len(s) {
+			return 0, false
+		}
+		for ; i < len(s); i++ {
+			if s[i] < '0' || s[i] > '9' {
+				return 0, false
+			}
+			n = n*10 + int(s[i]-'0')
+		}
+		if neg {
+			n = -n
+		}
+		return n, true
+	}
+
+	v, ok := FindMap(seqOf("x", "12", "y"), parse)
+	if !ok || v != 12 {
+		t.Fatalf("got (%d, %v), want (12, true)", v, ok)
+	}
+
+	_, ok = FindMap(seqOf("x", "y"), parse)
+	if ok {
+		t.Fatal("FindMap no match should return false")
+	}
+
+	_, ok = FindMap(Empty[string](), parse)
+	if ok {
+		t.Fatal("FindMap on empty should return false")
+	}
+}
+
 func TestEqual(t *testing.T) {
 	if !Equal(Range1(3), Range1(3)) {
 		t.Fatal("equal sequences should be true")
@@ -1376,6 +1471,7 @@ func TestGeneratorsEarlyStop(t *testing.T) {
 	stopEarly(TakeWhile(Range1(10), func(int) bool { return true }))
 	stopEarly(Skip(Range1(10), 2))
 	stopEarly(SkipWhile(Range1(10), func(int) bool { return false }))
+	stopEarly(StepBy(Range1(10), 2))
 	stopEarly(Chain(Range1(10), Range1(10)))
 	stopEarly(Chain(Empty[int](), Range1(10))) // second segment !yield branch
 	stopEarly(ZipWith(Range1(10), Range1(10), func(a, b int) int { return a }))

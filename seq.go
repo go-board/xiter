@@ -433,6 +433,28 @@ func SkipWhile[E any](s iter.Seq[E], f func(E) bool) iter.Seq[E] {
 	}
 }
 
+// StepBy yields every n-th element starting from the first (index 0). When
+// n <= 0 the result is empty.
+//
+//	StepBy(Range1(10), 3)  // yields 0, 3, 6, 9
+//	StepBy(Range1(5), 0)   // yields nothing
+func StepBy[E any](s iter.Seq[E], n int) iter.Seq[E] {
+	return func(yield func(E) bool) {
+		if n <= 0 {
+			return
+		}
+		i := 0
+		for e := range s {
+			if i%n == 0 {
+				if !yield(e) {
+					return
+				}
+			}
+			i++
+		}
+	}
+}
+
 // Chain concatenates seq1 and seq2 into a single sequence: all elements of
 // seq1 first, then all elements of seq2. When yield returns false, iteration
 // of the current source stops immediately and the other source is never
@@ -741,6 +763,49 @@ func Position[E any](s iter.Seq[E], f func(E) bool) (int, bool) {
 		index++
 	}
 	return -1, false
+}
+
+// Nth returns the n-th element (zero-based index). Returns (zero, false) when
+// n is negative or when the sequence has fewer than n+1 elements. Only the
+// first n+1 elements are consumed.
+//
+//	Nth(Range1(10), 3)   // returns (3, true)
+//	Nth(Range1(2), 5)    // returns (0, false)
+//	Nth(Range1(10), -1)  // returns (0, false)
+func Nth[E any](s iter.Seq[E], n int) (E, bool) {
+	if n < 0 {
+		var zero E
+		return zero, false
+	}
+	i := 0
+	for e := range s {
+		if i == n {
+			return e, true
+		}
+		i++
+	}
+	var zero E
+	return zero, false
+}
+
+// FindMap applies f to each element and returns the first result for which f
+// returns ok=true. It is equivalent to First(FilterMap(s, f)) but in a single
+// pass without constructing an intermediate sequence. Consumption stops at
+// the first element for which f returns ok=true.
+//
+//	FindMap(seqOf("1", "x", "3"), func(s string) (int, bool) {
+//	    n, err := strconv.Atoi(s)
+//	    if err != nil { return 0, false }
+//	    return n, true
+//	})  // returns (1, true)
+func FindMap[E1, E2 any](s iter.Seq[E1], f func(E1) (E2, bool)) (E2, bool) {
+	for e1 := range s {
+		if e2, ok := f(e1); ok {
+			return e2, true
+		}
+	}
+	var zero E2
+	return zero, false
 }
 
 // Compare performs a lexicographic comparison of x and y using cmp.Compare on

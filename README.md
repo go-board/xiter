@@ -168,6 +168,7 @@ stream.Iterate(1, func(x int) (int, bool) {
 - `FilterMap`, `FilterMap2`
 - `Take`, `Take2`, `TakeWhile`, `TakeWhile2`
 - `Skip`, `Skip2`, `SkipWhile`, `SkipWhile2`
+- `StepBy`, `StepBy2`
 - `Chain`, `Chain2`
 - `Zip`, `ZipWith`
 
@@ -205,19 +206,19 @@ The `stream` subpackage exposes chainable function types:
 
 Available without Go 1.27 method-level generics:
 
-- `Seq`: `Filter`, `Inspect`, `Take`, `Skip`, `TakeWhile`, `SkipWhile`, `Chain`, `Enumerate`
+- `Seq`: `Filter`, `Inspect`, `Take`, `Skip`, `TakeWhile`, `SkipWhile`, `StepBy`, `Chain`, `Enumerate`
 - `Seq`: `ForEach`, `TryForEach`, `Reduce`, `TryReduce`
-- `Seq`: `Size`, `SizeFunc`, `Any`, `All`, `First`, `Last`, `FirstFunc`, `LastFunc`, `Position`
+- `Seq`: `Size`, `SizeFunc`, `Any`, `All`, `First`, `Last`, `FirstFunc`, `LastFunc`, `Position`, `Nth`
 - `Seq`: `IsSortedFunc`, `CompareFunc`, `EqualFunc`, `MaxFunc`, `MinFunc`, `MinMaxFunc`, `ContainsFunc`
-- `Seq2`: `Filter`, `Keys`, `Values`, `Swap`, `Inspect`, `Take`, `Skip`, `TakeWhile`, `SkipWhile`, `Chain`
+- `Seq2`: `Filter`, `Keys`, `Values`, `Swap`, `Inspect`, `Take`, `Skip`, `TakeWhile`, `SkipWhile`, `StepBy`, `Chain`
 - `Seq2`: `ForEach`, `TryForEach`, `Reduce`, `TryReduce`
-- `Seq2`: `Size`, `SizeFunc`, `Any`, `All`, `First`, `Last`, `FirstFunc`, `LastFunc`, `Position`
+- `Seq2`: `Size`, `SizeFunc`, `Any`, `All`, `First`, `Last`, `FirstFunc`, `LastFunc`, `Position`, `Nth`
 - `Seq2`: `CompareFunc`, `EqualFunc`, `ContainsFunc`
 
 Available when building with Go 1.27 or newer:
 
-- `Seq`: `Map`, `MapWhile`, `FilterMap`, `Split`, `Zip`, `ZipWith`, `Fold`, `TryFold`, `Scan`, `Collect`
-- `Seq2`: `Map`, `MapWhile`, `FilterMap`, `Join`, `Fold`, `TryFold`, `Collect`
+- `Seq`: `Map`, `MapWhile`, `FilterMap`, `Split`, `Zip`, `ZipWith`, `Fold`, `TryFold`, `Scan`, `Collect`, `FindMap`
+- `Seq2`: `Map`, `MapWhile`, `FilterMap`, `Join`, `Fold`, `TryFold`, `Collect`, `FindMap`
 
 ### `collector` subpackage (experimental)
 

@@ -141,6 +141,18 @@ func ExampleSeq_SkipWhile() {
 	// 4
 }
 
+func ExampleSeq_StepBy() {
+	s := stream.Of(xiter.Range1(10)).StepBy(3)
+	for v := range s.Iter() {
+		fmt.Println(v)
+	}
+	// Output:
+	// 0
+	// 3
+	// 6
+	// 9
+}
+
 func ExampleSeq_Chain() {
 	s := stream.Of(xiter.Range2(0, 2)).Chain(stream.Of(xiter.Range2(10, 12)))
 	for v := range s.Iter() {
@@ -254,6 +266,12 @@ func ExampleSeq_LastFunc() {
 func ExampleSeq_Position() {
 	i, ok := stream.Of(xiter.Range1(10)).Position(func(n int) bool { return n == 3 })
 	fmt.Println(i, ok)
+	// Output: 3 true
+}
+
+func ExampleSeq_Nth() {
+	v, ok := stream.Of(xiter.Range1(10)).Nth(3)
+	fmt.Println(v, ok)
 	// Output: 3 true
 }
 
@@ -466,6 +484,18 @@ func ExampleSeq2_SkipWhile() {
 	// 4:4
 }
 
+func ExampleSeq2_StepBy() {
+	s := stream.Of2(xiter.Enumerate(xiter.Range1(10))).StepBy(3)
+	for k, v := range s.Iter() {
+		fmt.Printf("%d:%d\n", k, v)
+	}
+	// Output:
+	// 0:0
+	// 3:3
+	// 6:6
+	// 9:9
+}
+
 func ExampleSeq2_Chain() {
 	a := stream.Of2(xiter.Enumerate(xiter.Range2(0, 2)))
 	b := stream.Of2(xiter.Enumerate(xiter.Range2(10, 12)))
@@ -579,6 +609,12 @@ func ExampleSeq2_Position() {
 	i, ok := s.Position(func(k, v int) bool { return v == 3 })
 	fmt.Println(i, ok)
 	// Output: 3 true
+}
+
+func ExampleSeq2_Nth() {
+	k, v, ok := stream.Of2(xiter.Enumerate(xiter.Range1(10))).Nth(3)
+	fmt.Printf("%d:%d,%t\n", k, v, ok)
+	// Output: 3:3,true
 }
 
 func ExampleSeq2_CompareFunc() {

@@ -297,6 +297,27 @@ func SkipWhile2[K, V any](s iter.Seq2[K, V], f func(K, V) bool) iter.Seq2[K, V] 
 	}
 }
 
+// StepBy2 yields every n-th pair starting from the first (index 0). When
+// n <= 0 the result is empty.
+//
+//	StepBy2(Enumerate(Range1(10)), 3)  // yields (0,0), (3,3), (6,6), (9,9)
+func StepBy2[K, V any](s iter.Seq2[K, V], n int) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		if n <= 0 {
+			return
+		}
+		i := 0
+		for k, v := range s {
+			if i%n == 0 {
+				if !yield(k, v) {
+					return
+				}
+			}
+			i++
+		}
+	}
+}
+
 // Chain2 concatenates seq1 and seq2 into a single key/value sequence: all
 // pairs of seq1 first, then all pairs of seq2. When yield returns false,
 // iteration of the current source stops immediately and the other source is
@@ -571,6 +592,45 @@ func Position2[K, V any](s iter.Seq2[K, V], f func(K, V) bool) (int, bool) {
 		index++
 	}
 	return -1, false
+}
+
+// Nth2 returns the n-th pair (zero-based index). Returns (zero, zero, false)
+// when n is negative or when the sequence has fewer than n+1 pairs. Only the
+// first n+1 pairs are consumed.
+//
+//	Nth2(Enumerate(Range1(10)), 3)  // returns (3, 3, true)
+//	Nth2(Enumerate(Range1(2)), 5)   // returns (0, 0, false)
+func Nth2[K, V any](s iter.Seq2[K, V], n int) (K, V, bool) {
+	if n < 0 {
+		var zeroK K
+		var zeroV V
+		return zeroK, zeroV, false
+	}
+	i := 0
+	for k, v := range s {
+		if i == n {
+			return k, v, true
+		}
+		i++
+	}
+	var zeroK K
+	var zeroV V
+	return zeroK, zeroV, false
+}
+
+// FindMap2 applies f to each pair and returns the first result for which f
+// returns ok=true. It is equivalent to First(FilterMap2(s, f)) but in a single
+// pass without constructing an intermediate sequence. Consumption stops at the
+// first pair for which f returns ok=true.
+func FindMap2[K1, V1, K2, V2 any](s iter.Seq2[K1, V1], f func(K1, V1) (K2, V2, bool)) (K2, V2, bool) {
+	for k1, v1 := range s {
+		if k2, v2, ok := f(k1, v1); ok {
+			return k2, v2, true
+		}
+	}
+	var zeroK K2
+	var zeroV V2
+	return zeroK, zeroV, false
 }
 
 // Compare2 performs a lexicographic comparison of x and y. Keys are compared

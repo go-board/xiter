@@ -153,6 +153,18 @@ func ExampleSeq_Collect() {
 	// 01234
 }
 
+func ExampleSeq_FindMap() {
+	v, ok := stream.Of(xiter.Range1(5)).FindMap(func(n int) (string, bool) {
+		if n%2 == 0 {
+			return fmt.Sprintf("even%d", n), true
+		}
+		return "", false
+	})
+	fmt.Printf("%s,%t\n", v, ok)
+	// Output:
+	// even0,true
+}
+
 // ============================================================================
 // Seq2[K, V] methods requiring Go 1.27 method-level generics (seq2_go127.go)
 // ============================================================================
@@ -250,4 +262,18 @@ func ExampleSeq2_Collect() {
 	// 0:0
 	// 1:1
 	// 2:2
+}
+
+func ExampleSeq2_FindMap() {
+	k, v, ok := stream.Of2(xiter.Enumerate(xiter.Range1(5))).FindMap(
+		func(i, n int) (int, string, bool) {
+			if n > 2 {
+				return i, fmt.Sprintf("n=%d", n), true
+			}
+			return 0, "", false
+		},
+	)
+	fmt.Printf("%d:%s,%t\n", k, v, ok)
+	// Output:
+	// 3:n=3,true
 }

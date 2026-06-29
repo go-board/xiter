@@ -330,6 +330,17 @@ func ExampleSkipWhile() {
 	// 4
 }
 
+func ExampleStepBy() {
+	for v := range xiter.StepBy(xiter.Range1(10), 3) {
+		fmt.Println(v)
+	}
+	// Output:
+	// 0
+	// 3
+	// 6
+	// 9
+}
+
 func ExampleChain() {
 	for v := range xiter.Chain(xiter.Range1(2), xiter.Range2(10, 12)) {
 		fmt.Println(v)
@@ -520,6 +531,25 @@ func ExamplePosition() {
 	fmt.Printf("%d,%t\n", i, ok)
 	// Output:
 	// 3,true
+}
+
+func ExampleNth() {
+	v, ok := xiter.Nth(xiter.Range1(10), 3)
+	fmt.Printf("%d,%t\n", v, ok)
+	// Output:
+	// 3,true
+}
+
+func ExampleFindMap() {
+	v, ok := xiter.FindMap(xiter.Range1(5), func(n int) (string, bool) {
+		if n%2 == 0 {
+			return fmt.Sprintf("even%d", n), true
+		}
+		return "", false
+	})
+	fmt.Printf("%s,%t\n", v, ok)
+	// Output:
+	// even0,true
 }
 
 func ExampleCompare() {

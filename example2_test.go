@@ -231,6 +231,18 @@ func ExampleSkipWhile2() {
 	// 3:4
 }
 
+func ExampleStepBy2() {
+	seq := xiter.StepBy2(slices.All([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), 3)
+	for k, v := range seq {
+		fmt.Printf("%d:%d\n", k, v)
+	}
+	// Output:
+	// 0:0
+	// 3:3
+	// 6:6
+	// 9:9
+}
+
 func ExampleChain2() {
 	seq1 := slices.All([]int{1, 2})
 	seq2 := slices.All([]int{3, 4})
@@ -406,6 +418,25 @@ func ExamplePosition2() {
 	fmt.Printf("%d,%t\n", i, ok)
 	// Output:
 	// 1,true
+}
+
+func ExampleNth2() {
+	k, v, ok := xiter.Nth2(slices.All([]int{10, 20, 30, 40}), 2)
+	fmt.Printf("%d:%d,%t\n", k, v, ok)
+	// Output:
+	// 2:30,true
+}
+
+func ExampleFindMap2() {
+	k, v, ok := xiter.FindMap2(slices.All([]int{1, 2, 3, 4}), func(_, v int) (string, int, bool) {
+		if v%2 == 0 {
+			return "even", v * 10, true
+		}
+		return "", 0, false
+	})
+	fmt.Printf("%s:%d,%t\n", k, v, ok)
+	// Output:
+	// even:20,true
 }
 
 func ExampleCompare2() {

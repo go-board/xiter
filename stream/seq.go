@@ -98,6 +98,12 @@ func (s Seq[E]) TakeWhile(f func(E) bool) Seq[E] { return Of(xiter.TakeWhile(s.I
 //	// yields 3, 4, 1
 func (s Seq[E]) SkipWhile(f func(E) bool) Seq[E] { return Of(xiter.SkipWhile(s.Iter(), f)) }
 
+// StepBy returns a Seq that yields every n-th element starting from the first
+// (index 0). When n <= 0 the result is empty.
+//
+//	Of(xiter.Range1(10)).StepBy(3)  // yields 0, 3, 6, 9
+func (s Seq[E]) StepBy(n int) Seq[E] { return Of(xiter.StepBy(s.Iter(), n)) }
+
 // Chain concatenates s and other into a single Seq: all elements of s first,
 // then all elements of other. Either side may be empty or infinite.
 //
@@ -174,7 +180,16 @@ func (s Seq[E]) LastFunc(f func(E) bool) (E, bool) { return xiter.LastFunc(s.Ite
 // Position is a terminal operation that returns the zero-based index of the
 // first element satisfying f. Returns (-1, false) when no element matches.
 // Consumption stops at the first match.
-func (s Seq[E]) Position(f func(E) bool) (int, bool) { return xiter.Position(s.Iter(), f) }
+func (s Seq[E]) Position(f func(E) bool) (int, bool) {
+	return xiter.Position(s.Iter(), f)
+}
+
+// Nth is a terminal operation that returns the n-th element (zero-based
+// index). Returns (zero, false) when n is negative or when the sequence has
+// fewer than n+1 elements. Only the first n+1 elements are consumed.
+//
+//	Of(xiter.Range1(10)).Nth(3)  // (3, true)
+func (s Seq[E]) Nth(n int) (E, bool) { return xiter.Nth(s.Iter(), n) }
 
 // IsSortedFunc is a terminal operation that reports whether s is sorted by
 // comparator f. The comparison accepts both non-decreasing and non-increasing

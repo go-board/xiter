@@ -79,3 +79,12 @@ func (s Seq2[K, V]) TryFold[A any](init A, f func(A, K, V) (A, error)) (A, error
 //	Of2(xiter.Enumerate(xiter.Range1(3))).Collect(maps.Collect)
 //	// map[int]int{0:0, 1:1, 2:2}
 func (s Seq2[K, V]) Collect[R any](c func(iter.Seq2[K, V]) R) R { return c(s.Iter()) }
+
+// FindMap is a terminal operation that applies f to each pair and returns the
+// first result for which f returns ok=true. It is equivalent to
+// First(FilterMap2(s, f)) but in a single pass without constructing an
+// intermediate sequence. Requires Go 1.27 method-level generics because the
+// result types K2 and V2 are independent of K and V.
+func (s Seq2[K, V]) FindMap[K2, V2 any](f func(K, V) (K2, V2, bool)) (K2, V2, bool) {
+	return xiter.FindMap2(s.Iter(), f)
+}

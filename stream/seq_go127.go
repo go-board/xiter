@@ -106,3 +106,18 @@ func (s Seq[E]) Scan[A any](init A, f func(A, E) (A, bool)) Seq[A] {
 //
 //	Of(xiter.Range1(5)).Collect(slices.Collect)  // []int{0, 1, 2, 3, 4}
 func (s Seq[E]) Collect[R any](c func(iter.Seq[E]) R) R { return c(s.Iter()) }
+
+// FindMap is a terminal operation that applies f to each element and returns
+// the first result for which f returns ok=true. It is equivalent to
+// First(FilterMap(s, f)) but in a single pass without constructing an
+// intermediate sequence. Requires Go 1.27 method-level generics because the
+// result type E2 is independent of E.
+//
+//	Of(seqOf("1", "x", "3")).FindMap(func(s string) (int, bool) {
+//	    n, err := strconv.Atoi(s)
+//	    if err != nil { return 0, false }
+//	    return n, true
+//	})  // returns (1, true)
+func (s Seq[E]) FindMap[E2 any](f func(E) (E2, bool)) (E2, bool) {
+	return xiter.FindMap(s.Iter(), f)
+}

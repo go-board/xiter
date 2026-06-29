@@ -2,6 +2,8 @@ package xiter
 
 import (
 	"errors"
+	"fmt"
+	"iter"
 	"reflect"
 	"slices"
 	"testing"
@@ -383,6 +385,36 @@ func TestSkipWhile2(t *testing.T) {
 	result = ToMap(skipedWhile)
 	if len(result) != 0 {
 		t.Errorf("SkipWhile2 on empty sequence returned %d elements, expected 0", len(result))
+	}
+}
+
+func TestStepBy2(t *testing.T) {
+	cases := []struct {
+		name string
+		src  iter.Seq2[int, int]
+		n    int
+		want map[int]int
+	}{
+		{"normal", Enumerate(Range1(10)), 3, map[int]int{0: 0, 3: 3, 6: 6, 9: 9}},
+		{"step_one", Enumerate(Range1(3)), 1, map[int]int{0: 0, 1: 1, 2: 2}},
+		{"step_equals_len", Enumerate(Range1(4)), 4, map[int]int{0: 0}},
+		{"step_greater_than_len", Enumerate(Range1(4)), 10, map[int]int{0: 0}},
+		{"zero_step", Enumerate(Range1(5)), 0, nil},
+		{"negative_step", Enumerate(Range1(5)), -1, nil},
+		{"empty", Empty2[int, int](), 2, nil},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := ToMap(StepBy2(c.src, c.n))
+			if len(got) != len(c.want) {
+				t.Fatalf("got %v, want %v", got, c.want)
+			}
+			for k, v := range c.want {
+				if got[k] != v {
+					t.Fatalf("got %v, want %v", got, c.want)
+				}
+			}
+		})
 	}
 }
 
@@ -845,6 +877,56 @@ func TestPosition2(t *testing.T) {
 	}
 }
 
+func TestNth2(t *testing.T) {
+	cases := []struct {
+		name   string
+		src    iter.Seq2[int, int]
+		n      int
+		wantK  int
+		wantV  int
+		ok     bool
+	}{
+		{"normal", Enumerate(Range1(10)), 3, 3, 3, true},
+		{"first", Enumerate(Range1(10)), 0, 0, 0, true},
+		{"last", Enumerate(Range1(5)), 4, 4, 4, true},
+		{"out_of_range", Enumerate(Range1(2)), 5, 0, 0, false},
+		{"negative", Enumerate(Range1(5)), -1, 0, 0, false},
+		{"empty", Empty2[int, int](), 0, 0, 0, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			k, v, ok := Nth2(c.src, c.n)
+			if ok != c.ok || (ok && (k != c.wantK || v != c.wantV)) {
+				t.Fatalf("got (%d, %d, %v), want (%d, %d, %v)", k, v, ok, c.wantK, c.wantV, c.ok)
+			}
+		})
+	}
+}
+
+func TestFindMap2(t *testing.T) {
+	parse := func(k, v int) (string, int, bool) {
+		if v > 2 {
+			return fmt.Sprintf("k%d", k), v * 10, true
+		}
+		return "", 0, false
+	}
+
+	k, v, ok := FindMap2(Enumerate(Range1(5)), parse)
+	if !ok || k != "k3" || v != 30 {
+		t.Fatalf("got (%s, %d, %v), want (k3, 30, true)", k, v, ok)
+	}
+
+	_, _, ok = FindMap2(Enumerate(seqOf(1, 2)), parse)
+	if ok {
+		t.Fatal("FindMap2 no match should return false")
+	}
+
+	_, _, ok = FindMap2(Empty2[int, int](), parse)
+	if ok {
+		t.Fatal("FindMap2 on empty should return false")
+	}
+}
+
 func TestEqual2(t *testing.T) {
 	if !Equal2(Enumerate(Range1(3)), Enumerate(Range1(3))) {
 		t.Fatal("equal sequences should be true")
@@ -900,6 +982,7 @@ func TestGeneratorsEarlyStop2(t *testing.T) {
 	stopEarly2(TakeWhile2(Enumerate(Range1(10)), func(int, int) bool { return true }))
 	stopEarly2(Skip2(Enumerate(Range1(10)), 2))
 	stopEarly2(SkipWhile2(Enumerate(Range1(10)), func(int, int) bool { return false }))
+	stopEarly2(StepBy2(Enumerate(Range1(10)), 2))
 	stopEarly2(Chain2(Enumerate(Range1(10)), Enumerate(Range1(10))))
 	stopEarly2(Chain2(Empty2[int, int](), Enumerate(Range1(10)))) // second segment !yield branch
 	// Seq-returning generators in seq2.go

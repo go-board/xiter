@@ -5,6 +5,8 @@ package stream
 import (
 	"errors"
 	"fmt"
+	"iter"
+	"maps"
 	"slices"
 	"testing"
 
@@ -311,5 +313,58 @@ func TestSeq2KeyValueMethods(t *testing.T) {
 	wantSwapped := []string{"10:0", "11:1", "12:2"}
 	if !slices.Equal(swapped, wantSwapped) {
 		t.Fatalf("swapped %v, want %v", swapped, wantSwapped)
+	}
+}
+
+func TestSeqCollect(t *testing.T) {
+	// stdlib slices.Collect
+	got := Of(xiter.Range1(5)).Collect(slices.Collect)
+	want := []int{0, 1, 2, 3, 4}
+	if !slices.Equal(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+
+	// custom collector returning a different type
+	sum := Of(xiter.Range1(5)).Collect(func(s iter.Seq[int]) int {
+		total := 0
+		for v := range s {
+			total += v
+		}
+		return total
+	})
+	if sum != 10 {
+		t.Fatalf("sum %d, want 10", sum)
+	}
+
+	// empty sequence
+	empty := Of(xiter.Empty[int]()).Collect(slices.Collect)
+	if len(empty) != 0 {
+		t.Fatalf("empty got %v, want []", empty)
+	}
+}
+
+func TestSeq2Collect(t *testing.T) {
+	// stdlib maps.Collect
+	m := Of2(xiter.Enumerate(xiter.Range1(3))).Collect(maps.Collect)
+	if len(m) != 3 || m[0] != 0 || m[1] != 1 || m[2] != 2 {
+		t.Fatalf("got %v, want map[0:0 1:1 2:2]", m)
+	}
+
+	// custom collector returning a different type
+	count := Of2(xiter.Enumerate(xiter.Range1(5))).Collect(func(s iter.Seq2[int, int]) int {
+		n := 0
+		for range s {
+			n++
+		}
+		return n
+	})
+	if count != 5 {
+		t.Fatalf("count %d, want 5", count)
+	}
+
+	// empty sequence
+	empty := Of2(xiter.Empty2[int, int]()).Collect(maps.Collect)
+	if len(empty) != 0 {
+		t.Fatalf("empty got %v, want map[]", empty)
 	}
 }
