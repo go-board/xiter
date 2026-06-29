@@ -216,8 +216,8 @@ Available without Go 1.27 method-level generics:
 
 Available when building with Go 1.27 or newer:
 
-- `Seq`: `Map`, `MapWhile`, `FilterMap`, `Split`, `Zip`, `ZipWith`, `Fold`, `TryFold`, `Scan`
-- `Seq2`: `Map`, `MapWhile`, `FilterMap`, `Join`, `Fold`, `TryFold`
+- `Seq`: `Map`, `MapWhile`, `FilterMap`, `Split`, `Zip`, `ZipWith`, `Fold`, `TryFold`, `Scan`, `Collect`
+- `Seq2`: `Map`, `MapWhile`, `FilterMap`, `Join`, `Fold`, `TryFold`, `Collect`
 
 ### `collector` subpackage (experimental)
 

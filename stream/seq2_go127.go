@@ -2,7 +2,11 @@
 
 package stream
 
-import "github.com/go-board/xiter"
+import (
+	"iter"
+
+	"github.com/go-board/xiter"
+)
 
 // Map applies f to each key/value pair of s and yields the resulting
 // (K2, V2) pairs. The output length matches the input length. Requires Go 1.27
@@ -66,3 +70,12 @@ func (s Seq2[K, V]) Fold[A any](init A, f func(A, K, V) A) A {
 func (s Seq2[K, V]) TryFold[A any](init A, f func(A, K, V) (A, error)) (A, error) {
 	return xiter.TryFold2(s.Iter(), init, f)
 }
+
+// Collect is a terminal operation that applies c to s and returns the result.
+// c can be any function matching func(iter.Seq2[K, V]) R, including the
+// standard library's maps.Collect or a custom collector. Requires Go 1.27
+// method-level generics because the result type R is independent of K and V.
+//
+//	Of2(xiter.Enumerate(xiter.Range1(3))).Collect(maps.Collect)
+//	// map[int]int{0:0, 1:1, 2:2}
+func (s Seq2[K, V]) Collect[R any](c func(iter.Seq2[K, V]) R) R { return c(s.Iter()) }

@@ -2,7 +2,11 @@
 
 package stream
 
-import "github.com/go-board/xiter"
+import (
+	"iter"
+
+	"github.com/go-board/xiter"
+)
 
 // Map returns a Seq[E2] obtained by applying f to each element of s. The
 // output length matches the input length. Requires Go 1.27 method-level
@@ -94,3 +98,11 @@ func (s Seq[E]) TryFold[A any](init A, f func(A, E) (A, error)) (A, error) {
 func (s Seq[E]) Scan[A any](init A, f func(A, E) (A, bool)) Seq[A] {
 	return Of(xiter.Scan(s.Iter(), init, f))
 }
+
+// Collect is a terminal operation that applies c to s and returns the result.
+// c can be any function matching func(iter.Seq[E]) R, including the standard
+// library's slices.Collect or a custom collector. Requires Go 1.27 method-level
+// generics because the result type R is independent of E.
+//
+//	Of(xiter.Range1(5)).Collect(slices.Collect)  // []int{0, 1, 2, 3, 4}
+func (s Seq[E]) Collect[R any](c func(iter.Seq[E]) R) R { return c(s.Iter()) }

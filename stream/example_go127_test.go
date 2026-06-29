@@ -5,6 +5,9 @@ package stream_test
 import (
 	"errors"
 	"fmt"
+	"iter"
+	"maps"
+	"slices"
 
 	"github.com/go-board/xiter"
 	"github.com/go-board/xiter/stream"
@@ -131,6 +134,25 @@ func ExampleSeq_Scan() {
 	// 10
 }
 
+func ExampleSeq_Collect() {
+	// Use the standard library slices.Collect as a collector.
+	got := stream.Of(xiter.Range1(5)).Collect(slices.Collect)
+	fmt.Println(got)
+
+	// Or any function matching func(iter.Seq[E]) R.
+	joined := stream.Of(xiter.Range1(5)).Collect(func(s iter.Seq[int]) string {
+		var b []byte
+		for v := range s {
+			b = append(b, fmt.Sprintf("%d", v)...)
+		}
+		return string(b)
+	})
+	fmt.Println(joined)
+	// Output:
+	// [0 1 2 3 4]
+	// 01234
+}
+
 // ============================================================================
 // Seq2[K, V] methods requiring Go 1.27 method-level generics (seq2_go127.go)
 // ============================================================================
@@ -216,4 +238,16 @@ func ExampleSeq2_TryFold() {
 		})
 	fmt.Println(sum, err)
 	// Output: 12 stop
+}
+
+func ExampleSeq2_Collect() {
+	// Use the standard library maps.Collect as a collector.
+	m := stream.Of2(xiter.Enumerate(xiter.Range1(3))).Collect(maps.Collect)
+	for _, k := range slices.Sorted(maps.Keys(m)) {
+		fmt.Printf("%d:%d\n", k, m[k])
+	}
+	// Output:
+	// 0:0
+	// 1:1
+	// 2:2
 }
